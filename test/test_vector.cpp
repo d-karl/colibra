@@ -30,6 +30,10 @@ TEST_CASE("Vector")
 
         b2[2] = 2.5;
         CHECK(b != b2);
+
+        std::stringstream ss;
+        ss << b;
+        CHECK(ss.str() == "{ 2.5, 3.1, 4.2 }");
     }
 
     SUBCASE("Null vector")
