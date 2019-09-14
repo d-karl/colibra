@@ -29,8 +29,8 @@ class Vector
 
   public:
     template<typename... P>
-    explicit constexpr Vector(T const val1, P const... vals)
-        : m_array {std::move(val1), std::move(vals)...}
+    explicit constexpr Vector(T const &&val1, P const &&... vals)
+        : m_array {val1, vals...}
     {
     }
 
@@ -65,14 +65,24 @@ class Vector
         return l;
     }
 
-    [[nodiscard]] constexpr T &operator[](const size_t p)
+    [[nodiscard]] constexpr T &at(const size_t p)
     {
         return m_array.at(p);
     }
 
-    [[nodiscard]] constexpr T const &operator[](const size_t p) const
+    [[nodiscard]] constexpr T const &at(const size_t p) const
     {
         return m_array.at(p);
+    }
+
+    [[nodiscard]] constexpr T &operator[](const size_t p)
+    {
+        return m_array[p];
+    }
+
+    [[nodiscard]] constexpr T const &operator[](const size_t p) const
+    {
+        return m_array[p];
     }
 
     template<class S, typename R = std::common_type_t<T, S>>
@@ -129,6 +139,11 @@ class Vector
             norm += i * i;
         }
         return sqrt(norm);
+    }
+
+    [[nodiscard]] constexpr const T *data() const
+    {
+        return m_array.data();
     }
 
     friend std::ostream &operator<<(std::ostream &os, const Vector<l, T> &vec)

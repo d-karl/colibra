@@ -31,7 +31,7 @@ class Vector : details::Vector<l, T>
      */
     template<typename... P>
     explicit constexpr Vector(T const val1, P const... vals)
-        : Impl_(val1, vals...)
+        : Impl_(std::move(val1), std::move(vals)...)
     {
     }
 
@@ -78,10 +78,35 @@ class Vector : details::Vector<l, T>
     }
 
     /**
+     * @brief: Access the field with the given index of this Vector with range
+     * checking.
+     *
+     * @throws std::out_of_range When accessing fields out of range.
+     *
+     * @return Mutable reference to the entry inside this Vector.
+     */
+    [[nodiscard]] constexpr T &at(const size_t p)
+    {
+        return Impl_::at(p);
+    }
+
+    /**
+     * @brief: Access the field with the given index of this Vector with range
+     * checking.
+     *
+     * @throws std::out_of_range When accessing fields out of range.
+     *
+     * @return Constant reference to the entry inside this Vector.
+     */
+    [[nodiscard]] constexpr T const &at(const size_t p) const
+    {
+        return Impl_::at(p);
+    }
+
+    /**
      * @brief: Access the field with the given index of this Vector.
      *
-     * @throws std::out_of_range When accessing elements outside of the valid
-     * range.
+     * @warning Does not perform range-checking.
      *
      * @return Mutable reference to the entry inside this Vector.
      */
@@ -93,8 +118,7 @@ class Vector : details::Vector<l, T>
     /**
      * @brief: Access the field with the given index of this Vector.
      *
-     * @throws std::out_of_range When accessing elements outside of the valid
-     * range.
+     * @warning Does not perform range-checking.
      *
      * @return Constant reference to the entry inside this Vector.
      */
@@ -104,7 +128,7 @@ class Vector : details::Vector<l, T>
     }
 
     /**
-     * @brief: Multiply this Vector with another Vector, creating a scalar.
+     * @brief: Dot multiply this Vector with another.
      *
      * This automatically adjuncts one of the Vectors from column-major to
      * row-major. This function also automatically promotes the return type
@@ -208,6 +232,31 @@ class Vector : details::Vector<l, T>
     [[nodiscard]] constexpr double norm() const
     {
         return Impl_::norm();
+    }
+
+    /**
+     * @brief: Calculate the dot product between this and another Vector.
+     *
+     * This function automatically promotes the result type if necessary.
+     *
+     * @param other The other Vector
+     *
+     * @return The dot product.
+     */
+    template<class S, typename R = std::common_type_t<T, S>>
+    [[nodiscard]] constexpr R dot(Vector<l, S> &other) const
+    {
+        return Impl_::operator*(other);
+    }
+
+    /**
+     * @brief: Get a ptr to the underlying array in this Vector.
+     *
+     * @return Ptr to data.
+     */
+    [[nodiscard]] constexpr const T *data() const
+    {
+        return Impl_::data();
     }
 
     /**
