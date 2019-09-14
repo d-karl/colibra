@@ -1,13 +1,7 @@
 #ifndef COLIBRA_VECTOR_H
 #define COLIBRA_VECTOR_H
 
-#include <algorithm>
-#include <array>
-#include <cmath>
-#include <functional>
-#include <numeric>
-#include <ostream>
-#include <type_traits>
+#include "details/vector.hpp"
 
 namespace colibra {
 
@@ -24,17 +18,20 @@ namespace colibra {
  * detail that allows constructor magic to auto determine the size on creation.
  */
 template<size_t l, typename T>
-class Vector
+class Vector : details::Vector<l, T>
 {
     using array_type = typename std::array<T, l>;
 
+    using Impl_ = details::Vector<l, T>;
+
   public:
     /**
-     * @brief: Create a new Vector given an arbitrary number of initial values.
+     * @brief: Create a new Vector given an arbitrary number of initial
+     * values.
      */
     template<typename... P>
     explicit constexpr Vector(T const val1, P const... vals)
-        : m_array {std::move(val1), std::move(vals)...}
+        : Impl_(std::move(val1), std::move(vals)...)
     {
     }
 
@@ -43,33 +40,31 @@ class Vector
      * type the Vector holds if you use this function.
      */
     constexpr Vector()
-        : m_array()
+        : Impl_()
     {
-        static_assert(l > 0, "Can not declare Vectors with 0 elements");
     }
 
     /***************
      *  iterators  *
      ***************/
-    inline auto begin() noexcept -> decltype(std::declval<array_type>().begin())
+    auto begin() noexcept -> decltype(std::declval<array_type>().begin())
     {
-        return m_array.begin();
+        return Impl_::begin();
     }
 
-    inline auto cbegin() noexcept
-        -> decltype(std::declval<array_type>().cbegin())
+    auto cbegin() noexcept -> decltype(std::declval<array_type>().cbegin())
     {
-        return m_array.cbegin();
+        return Impl_::cbegin();
     }
 
-    inline auto end() noexcept -> decltype(std::declval<array_type>().end())
+    auto end() noexcept -> decltype(std::declval<array_type>().end())
     {
-        return m_array.end();
+        return Impl_::end();
     }
 
-    inline auto cend() noexcept -> decltype(std::declval<array_type>().cend())
+    auto cend() noexcept -> decltype(std::declval<array_type>().cend())
     {
-        return m_array.cend();
+        return Impl_::cend();
     }
 
     /**
@@ -79,41 +74,65 @@ class Vector
      */
     [[nodiscard]] constexpr size_t rank() const
     {
-        return l;
+        return Impl_::rank();
+    }
+
+    /**
+     * @brief: Access the field with the given index of this Vector with range
+     * checking.
+     *
+     * @throws std::out_of_range When accessing fields out of range.
+     *
+     * @return Mutable reference to the entry inside this Vector.
+     */
+    [[nodiscard]] constexpr T &at(const size_t p)
+    {
+        return Impl_::at(p);
+    }
+
+    /**
+     * @brief: Access the field with the given index of this Vector with range
+     * checking.
+     *
+     * @throws std::out_of_range When accessing fields out of range.
+     *
+     * @return Constant reference to the entry inside this Vector.
+     */
+    [[nodiscard]] constexpr T const &at(const size_t p) const
+    {
+        return Impl_::at(p);
     }
 
     /**
      * @brief: Access the field with the given index of this Vector.
      *
-     * @throws std::out_of_range When accessing elements outside of the valid
-     * range.
+     * @warning Does not perform range-checking.
      *
      * @return Mutable reference to the entry inside this Vector.
      */
     [[nodiscard]] constexpr T &operator[](const size_t p)
     {
-        return m_array.at(p);
+        return Impl_::operator[](p);
     }
 
     /**
      * @brief: Access the field with the given index of this Vector.
      *
-     * @throws std::out_of_range When accessing elements outside of the valid
-     * range.
+     * @warning Does not perform range-checking.
      *
      * @return Constant reference to the entry inside this Vector.
      */
     [[nodiscard]] constexpr T const &operator[](const size_t p) const
     {
-        return m_array.at(p);
+        return Impl_::operator[](p);
     }
 
     /**
-     * @brief: Multiply this Vector with another Vector, creating a scalar.
+     * @brief: Dot multiply this Vector with another.
      *
      * This automatically adjuncts one of the Vectors from column-major to
-     * row-major. This function also automatically promotes the return type if
-     * necessary.
+     * row-major. This function also automatically promotes the return type
+     * if necessary.
      *
      * @param other The other Vector.
      *
@@ -123,10 +142,9 @@ class Vector
     template<class S, typename R = std::common_type_t<T, S>>
     [[nodiscard]] constexpr R operator*(const Vector<l, S> &other) const
     {
-        return apply_each(
-                   other, std::multiplies<R>(), std::make_index_sequence<l> {})
-            .sum(std::make_index_sequence<l> {});
+        return Impl_::operator*(other);
     }
+
 
     /**
      * @brief: Multiply this Vector with a scalar.
@@ -135,15 +153,13 @@ class Vector
      *
      * @param scalar The scalar value to multiply with.
      *
-     * @return The resulting Vector, possibly promoted to a different data type
-     * that can best support the arithmetic operation.
+     * @return The resulting Vector, possibly promoted to a different data
+     * type that can best support the arithmetic operation.
      */
     template<class S, typename R = std::common_type_t<T, S>>
     [[nodiscard]] constexpr Vector<l, R> operator*(const S &scalar) const
     {
-
-        return apply_each(
-            scalar, std::multiplies<R>(), std::make_index_sequence<l> {});
+        return Impl_::operator*(scalar);
     }
 
     /**
@@ -153,14 +169,13 @@ class Vector
      *
      * @param other The other vector to add to this one.
      *
-     * @return The resulting Vector, possibly promoted to a different data type
-     * that can best support the arithmetic operation.
+     * @return The resulting Vector, possibly promoted to a different data
+     * type that can best support the arithmetic operation.
      */
     template<class S, typename R = std::common_type_t<T, S>>
     [[nodiscard]] constexpr auto operator+(const Vector<l, S> &other) const
     {
-        return apply_each(
-            other, std::plus<R>(), std::make_index_sequence<l> {});
+        return Impl_::operator+(other);
     }
 
     /**
@@ -170,14 +185,13 @@ class Vector
      *
      * @param other The other Vector to subtract from this one.
      *
-     * @return The resulting Vector, possibly promoted to a different data type
-     * that can best support the arithmetic operation.
+     * @return The resulting Vector, possibly promoted to a different data
+     * type that can best support the arithmetic operation.
      */
     template<class S, typename R = std::common_type_t<T, S>>
     [[nodiscard]] constexpr auto operator-(const Vector<l, S> &other) const
     {
-        return apply_each(
-            other, std::minus<R>(), std::make_index_sequence<l> {});
+        return Impl_::operator-(other);
     }
 
     /**
@@ -187,7 +201,7 @@ class Vector
      */
     [[nodiscard]] constexpr auto operator-()
     {
-        return apply_each(std::negate<T>(), std::make_index_sequence<l> {});
+        return Impl_::operator-();
     }
 
     /**
@@ -197,7 +211,7 @@ class Vector
      */
     [[nodiscard]] constexpr bool operator==(Vector const &other) const
     {
-        return m_array == other.m_array;
+        return Impl_::operator==(other);
     }
 
     /**
@@ -207,7 +221,7 @@ class Vector
      */
     [[nodiscard]] constexpr bool operator!=(Vector const &other) const
     {
-        return m_array != other.m_array;
+        return Impl_::operator!=(other);
     }
 
     /**
@@ -217,12 +231,32 @@ class Vector
      */
     [[nodiscard]] constexpr double norm() const
     {
-        double norm = 0;
-        for (const auto &i : m_array)
-        {
-            norm += i * i;
-        }
-        return sqrt(norm);
+        return Impl_::norm();
+    }
+
+    /**
+     * @brief: Calculate the dot product between this and another Vector.
+     *
+     * This function automatically promotes the result type if necessary.
+     *
+     * @param other The other Vector
+     *
+     * @return The dot product.
+     */
+    template<class S, typename R = std::common_type_t<T, S>>
+    [[nodiscard]] constexpr R dot(Vector<l, S> &other) const
+    {
+        return Impl_::operator*(other);
+    }
+
+    /**
+     * @brief: Get a ptr to the underlying array in this Vector.
+     *
+     * @return Ptr to data.
+     */
+    [[nodiscard]] constexpr const T *data() const
+    {
+        return Impl_::data();
     }
 
     /**
@@ -230,61 +264,13 @@ class Vector
      */
     friend std::ostream &operator<<(std::ostream &os, const Vector<l, T> &vec)
     {
-        // lengt l = 0 is impossible due to static assert.
-        if constexpr (l > 1)
-        {
-            os << "{ " << vec.m_array[0];
-            for (auto it = vec.m_array.cbegin() + 1; it != vec.m_array.cend();
-                 it++)
-            {
-                os << ", " << *it;
-            }
-
-            os << " }";
-        }
-        else
-        {
-            os << "{ " << vec.m_array[0] << " ";
-        }
-
-        return os;
-    }
-
-  private:
-    array_type m_array;
-
-    template<typename S, class Op, size_t... Idx>
-    constexpr auto
-    apply_each(const S &fac, const Op &op, std::index_sequence<Idx...>) const
-    {
-        return Vector<l, std::common_type_t<T, S>> {op(m_array[Idx], fac)...};
-    }
-
-    template<typename O, class Op, size_t... Idx>
-    constexpr auto apply_each(const Vector<l, O> &other,
-                              const Op &          op,
-                              std::index_sequence<Idx...>) const
-    {
-        return Vector<l, std::common_type_t<T, O>> {
-            op(m_array[Idx], other[Idx])...};
-    }
-
-    template<class Op, size_t... Idx>
-    constexpr auto apply_each(const Op &op, std::index_sequence<Idx...>) const
-    {
-        return Vector {op(m_array[Idx])...};
-    }
-
-    template<size_t... Idx>
-    constexpr auto sum(std::index_sequence<Idx...>) const
-    {
-        return (... + m_array[Idx]);
+        return os << static_cast<Impl_>(vec);
     }
 };
 
 /**
- * @brief: Template deduction guide to allow deduction of underlying data type
- * from initializer lists.
+ * @brief: Template deduction guide to allow deduction of underlying data
+ * type from initializer lists.
  */
 template<typename R, typename... D>
 Vector(R val1, D... vals)->Vector<1 + sizeof...(D), R>;

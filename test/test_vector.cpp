@@ -30,6 +30,12 @@ TEST_CASE("Vector")
 
         b2[2] = 2.5;
         CHECK(b != b2);
+
+        std::stringstream ss;
+        ss << b;
+        CHECK(ss.str() == "{ 2.5, 3.1, 4.2 }");
+
+        CHECK_THROWS(b.at(103));
     }
 
     SUBCASE("Null vector")
@@ -70,9 +76,11 @@ TEST_CASE("Vector")
 
             CHECK(typeid(b2) == typeid(b));
 
+            auto b2_data = b2.data();
+
             for (int i = 0; i < b2.rank(); ++i)
             {
-                CHECK(b2[i] == b[i] * 2.0);
+                CHECK(b2_data[i] == b[i] * 2.0);
             }
             constexpr auto i2(vec_i * 3);
             CHECK(typeid(i2) == typeid(vec_i));
@@ -97,7 +105,9 @@ TEST_CASE("Vector")
                 scalar += b[j] * b2[j];
             }
 
-            std::cout << b3 << std::endl;
+            constexpr auto b4 = b2.dot(b);
+
+            CHECK(b3 == b4);
         }
 
         SUBCASE("Vec addition")
