@@ -19,6 +19,7 @@ target_compile_features(colibra INTERFACE cxx_std_17)
 enable_testing()
 add_executable(colibra_test
     test/test_vector.cpp
+    test/test_matrix.cpp
 )
 target_compile_features(colibra_test PRIVATE cxx_std_17)
 target_include_directories(colibra_test
