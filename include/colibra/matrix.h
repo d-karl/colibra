@@ -3,7 +3,6 @@
 
 #include <algorithm>
 #include <array>
-#include <cstdarg>
 #include <iostream>
 #include <type_traits>
 
@@ -54,7 +53,8 @@ class Matrix
         return m_array.begin();
     }
 
-    auto cbegin() noexcept -> decltype(std::declval<array_type>().cbegin())
+    auto cbegin() noexcept
+        -> decltype(std::declval<const array_type>().cbegin()) const
     {
         return m_array.cbegin();
     }
@@ -64,7 +64,8 @@ class Matrix
         return m_array.end();
     }
 
-    auto cend() noexcept -> decltype(std::declval<array_type>().cend())
+    auto cend() noexcept
+        -> decltype(std::declval<const array_type>().cend()) const
     {
         return m_array.cend();
     }
@@ -73,7 +74,7 @@ class Matrix
     array_type m_array;
 
     template<typename P, size_t N>
-    constexpr void inline assign_array(size_t row, const P (&nested_list)[N])
+    constexpr void assign_array(size_t row, const P (&nested_list)[N])
     {
         for (int i = 0; i < N; ++i)
         {
@@ -94,6 +95,39 @@ class Matrix
     constexpr void assign_recursive(size_t row, const R (&nested_list)[N])
     {
         assign_array<R, N>(row, nested_list);
+    }
+
+    friend std::ostream &operator<<(std::ostream &                  os,
+                                    const Matrix<rows, columns, T> &mat)
+    {
+        // lengt l = 0 is impossible due to static assert.
+        os << '{';
+
+        auto print_row = [&](std::array<T, columns> &row) {
+            os << '{';
+            for (const auto &item : row)
+            {
+                os << item;
+                if (&item != row.cend() - 1)
+                {
+                    os << ", ";
+                }
+            }
+            os << '}';
+        };
+
+        for (auto const &row : mat.m_array)
+        {
+            print_row(row);
+            if (&row != mat.m_array.cend() - 1)
+            {
+                os << ",\n";
+            }
+        }
+
+        os << '}';
+
+        return os;
     }
 };
 

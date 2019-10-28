@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
+include(ExternalProject)
 include(cmake/aquire_doctest.cmake)
 
 option(BUILD_WITH_ASAN "Whether to build tests with ASAN" ON)
